@@ -111,7 +111,31 @@ def preprocess_and_split_to_tokens(sentences: ArrayLike, n_gram: int) -> ArrayLi
         e.g., [["I", "like", "apples"], ["I", "love", "python3"]] for n_gram == 1
               [["I like", "like apples"], ["I love", "love python3"]] for n_gram == 2 
     """
-    raise NotImplementedError
+    # raise NotImplementedError
+    ret = []
+    for sentence in sentences:
+        lowercase_sentence = sentence.lower()
+        lowercase_sentence = lowercase_sentence.replace(',', ", ")
+        lowercase_sentence = lowercase_sentence.replace('.', ". ")
+        lowercase_sentence = lowercase_sentence.replace('?', "? ")
+        lowercase_sentence = lowercase_sentence.replace('!', "! ")
+        lowercase_sentence = lowercase_sentence.replace('-', " ")
+        lowercase_sentence = re.sub(r"[^a-zA-Z0-9 ]+", "", lowercase_sentence)
+        lowercase_sentence = lowercase_sentence.replace('...', ' ')
+        tokens = lowercase_sentence.split(" ")
+        for i in range(len(tokens)):
+            tokens[i] = tokens[i].replace(" ", "")
+        gram_data = []
+        if n_gram == 1:
+            gram_data = tokens
+        else:
+            for i in range(len(tokens)-1):
+                temp = tokens[i] + ' ' + tokens[i+1]
+                gram_data.append(temp)
+        ret.append(gram_data)
+    # print(ret)
+    return ret
+
 
 
 def create_bow(sentences: ArrayLike, n_gram: int, vocab: Dict[str, int] = None,  
@@ -135,13 +159,32 @@ def create_bow(sentences: ArrayLike, n_gram: int, vocab: Dict[str, int] = None,
                 [[1, 1, 1, 0, 0], [1, 0, 0, 1, 1]])
     """
     tokens_per_sentence = preprocess_and_split_to_tokens(sentences, n_gram)
+    tokens_dict = {}
+    for tokens in tokens_per_sentence:
+        for words in tokens:
+            tokens_dict[words] = tokens_dict.get(words, 0) + 1
+    tokens_sorted = sorted(tokens_dict.items(), key=lambda x:x[1], reverse=True)
+
 
     if vocab is None:
         print("{} Vocab construction".format(msg_prefix))
-        raise NotImplementedError
-
+        vocab = {}
+        # raise NotImplementedError
+        idx = 0
+        for words in tokens_sorted:
+            vocab[words[0]] = idx
+            idx += 1
+    
     print("{} Bow construction".format(msg_prefix))
-    raise NotImplementedError
+    bow_array = []
+    for i in range(len(sentences)):
+        bow = [0] * len(vocab)
+        for words in tokens_per_sentence[i]:
+            if words in vocab:
+                bow[vocab[words]] = 1
+        bow_array.append(bow)
+    return (vocab, bow_array)
+    # raise NotImplementedError
 
 
 def run(test_xs=None, test_ys=None, num_samples=5000, verbose=True, n_gram=1):
